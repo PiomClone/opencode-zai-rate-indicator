@@ -1,0 +1,38 @@
+{
+  "name": "opencode-zai-rate-indicator",
+  "version": "0.1.0",
+  "description": "OpenCode TUI plugin that shows current Z.AI peak quota status.",
+  "type": "module",
+  "license": "MIT",
+  "oc-plugin": [
+    "tui"
+  ],
+  "exports": {
+    ".": "./src/server.js",
+    "./tui": "./src/tui.js"
+  },
+  "files": [
+    "src",
+    "README.md",
+    "LICENSE"
+  ],
+  "keywords": [
+    "opencode",
+    "opencode-plugin",
+    "zai",
+    "glm",
+    "quota",
+    "tui"
+  ],
+  "scripts": {
+    "check": "node --check src/server.js && node --check src/tui.js"
+  },
+  "peerDependencies": {
+    "@opentui/solid": "*"
+  },
+  "peerDependenciesMeta": {
+    "@opentui/solid": {
+      "optional": true
+    }
+  }
+}
