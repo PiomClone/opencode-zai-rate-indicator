@@ -4,6 +4,14 @@
   "description": "OpenCode TUI plugin that shows current Z.AI peak quota status.",
   "type": "module",
   "license": "MIT",
+  "homepage": "https://github.com/PiomClone/opencode-zai-rate-indicator#readme",
+  "repository": {
+    "type": "git",
+    "url": "git+ssh://git@github.com/PiomClone/opencode-zai-rate-indicator.git"
+  },
+  "bugs": {
+    "url": "https://github.com/PiomClone/opencode-zai-rate-indicator/issues"
+  },
   "oc-plugin": [
     "tui"
   ],
@@ -20,9 +28,14 @@
     "opencode",
     "opencode-plugin",
     "zai",
+    "z-ai",
     "glm",
+    "glm-5",
+    "zai-coding-plan",
     "quota",
-    "tui"
+    "tui",
+    "peak-pricing",
+    "quota-indicator"
   ],
   "scripts": {
     "check": "node --check src/server.js && node --check src/tui.js"
