@@ -50,7 +50,7 @@ This writes to `~/.config/opencode/tui.json`.
 
 ```jsonc
 [
-  "git.com:PiomClone/opencode-zai-rate-indicator.git",
+  "git@github.com:PiomClone/opencode-zai-rate-indicator.git",
   {
     "peakHours": { "start": 9, "end": 13, "timeZone": "Europe/Moscow" }
   }
