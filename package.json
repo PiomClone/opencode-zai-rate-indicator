@@ -1,7 +1,7 @@
 {
   "name": "opencode-zai-rate-indicator",
-  "version": "0.2.5",
-  "description": "OpenCode TUI plugin that shows current Z.AI peak quota status.",
+  "version": "0.3.0",
+  "description": "OpenCode TUI plugin that shows current Z.AI peak quota and subscription usage status.",
   "type": "module",
   "license": "MIT",
   "homepage": "https://github.com/PiomClone/opencode-zai-rate-indicator#readme",

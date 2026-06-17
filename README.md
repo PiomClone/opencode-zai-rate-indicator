@@ -1,6 +1,6 @@
 # opencode-zai-rate-indicator
 
-OpenCode TUI plugin that shows current Z.AI / GLM quota multiplier status in the sidebar.
+OpenCode TUI plugin that shows current Z.AI / GLM quota multiplier and subscription quota status.
 
 It is useful when you use Z.AI Coding Plan models and want a visible warning before spending requests during the peak pricing window.
 
@@ -8,8 +8,11 @@ Companion server guard: [opencode-zai-peak-guard](https://github.com/PiomClone/o
 
 ## Quick Install
 
+For now the most reliable TUI setup is a local checkout:
+
 ```sh
-opencode plugin git@github.com:PiomClone/opencode-zai-rate-indicator.git -g --force
+git clone git@github.com:PiomClone/opencode-zai-rate-indicator.git ~/.config/opencode/plugins/opencode-zai-rate-indicator
+opencode plugin file://$HOME/.config/opencode/plugins/opencode-zai-rate-indicator -g --force
 ```
 
 Restart OpenCode/TUI after installing.
@@ -18,17 +21,21 @@ Restart OpenCode/TUI after installing.
 
 Default peak window is `09:00-13:00 Europe/Moscow`. GLM-5.2 / GLM-5-Turbo are shown as `3x` during peak, `1x` off-peak until `2026-09-30`, and `2x` off-peak after that by default.
 
+If the Z.AI key is available in OpenCode auth as `zai-coding-plan`, the plugin also fetches real subscription quota usage from Z.AI:
+
 During peak it shows a red boxed indicator:
 
 ```text
-Z.AI PEAK 3x
+Z.AI PEAK 3x · plan PRO · 5h 42% reset 14:03 · week 18%
 ```
 
 Outside peak it shows:
 
 ```text
-Z.AI OFF-PEAK 1x until Sep 30
+Z.AI OFF-PEAK 1x until Sep 30 · plan PRO · 5h 42% reset 14:03 · week 18%
 ```
+
+If quota fetching fails, it silently falls back to the multiplier-only indicator.
 
 ## Install
 
@@ -47,6 +54,16 @@ opencode plugin file://$(pwd) -g --force
 This writes to `~/.config/opencode/tui.json`.
 On OpenCode versions that support `opencode plugin`, the package entrypoint is the TUI plugin itself.
 
+Example global TUI config:
+
+```json
+{
+  "plugin": [
+    "file:///Users/me/.config/opencode/plugins/opencode-zai-rate-indicator"
+  ]
+}
+```
+
 ## Options
 
 ```jsonc
@@ -54,10 +71,28 @@ On OpenCode versions that support `opencode plugin`, the package entrypoint is t
   "git@github.com:PiomClone/opencode-zai-rate-indicator.git",
   {
     "peakHours": { "start": 9, "end": 13, "timeZone": "Europe/Moscow" },
-    "offPeakBenefitUntil": "2026-09-30"
+    "offPeakBenefitUntil": "2026-09-30",
+    "authKey": "zai-coding-plan",
+    "quotaRefreshMs": 300000,
+    "showQuota": true,
+    "showHome": true,
+    "showSidebar": true,
+    "showQuotaDetails": true
   }
 ]
 ```
+
+## Commands
+
+The command palette includes runtime toggles:
+
+```text
+Z.AI quota: hide/show sidebar
+Z.AI quota: hide/show home banner
+Z.AI quota: hide/show quota details
+```
+
+These toggles apply to the current TUI process only. Use options in `tui.json` for persistent defaults.
 
 ## Development
 
