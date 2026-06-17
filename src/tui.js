@@ -64,6 +64,9 @@ const tui = async (api, options) => {
   api.slots.register({
     order: 10,
     slots: {
+      app_bottom() {
+        return indicatorBox(api, options)
+      },
       sidebar_content() {
         return indicatorBox(api, options)
       },
