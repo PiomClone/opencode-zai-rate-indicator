@@ -44,7 +44,7 @@ const tui = async (api, options) => {
   const timer = setInterval(() => api.renderer.requestRender(), 30_000)
   api.lifecycle.onDispose(() => clearInterval(timer))
 
-  api.command.register(() => [
+  api.command?.register?.(() => [
     {
       title: `Z.AI quota: ${rate(options).label}`,
       value: "zai-rate-indicator.status",
