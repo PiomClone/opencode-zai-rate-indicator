@@ -72,6 +72,7 @@ const tui = async (api, options) => {
       },
     },
   })
+  api.renderer.requestRender()
 }
 
 function indicatorBox(api, options) {
