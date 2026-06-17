@@ -45,6 +45,7 @@ opencode plugin file://$(pwd) -g --force
 ```
 
 This writes to `~/.config/opencode/tui.json`.
+On OpenCode versions that support `opencode plugin`, the package entrypoint is the TUI plugin itself.
 
 ## Options
 
