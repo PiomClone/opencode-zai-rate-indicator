@@ -1,5 +1,6 @@
 import { createElement, insert, setProp } from "@opentui/solid"
 import { readFile } from "node:fs/promises"
+import { createSignal } from "solid-js"
 
 const DEFAULT_PEAK_HOURS = { start: 9, end: 13, timeZone: "Europe/Moscow" }
 const DEFAULT_OFF_PEAK_BENEFIT_UNTIL = "2026-09-30"
@@ -9,15 +10,8 @@ const FETCH_TIMEOUT_MS = 10_000
 
 const quota = {
   loading: false,
-  result: null,
   error: null,
   updatedAt: 0,
-}
-
-const display = {
-  home: true,
-  sidebar: true,
-  quotaDetails: true,
 }
 
 function settings(options = {}) {
@@ -27,9 +21,8 @@ function settings(options = {}) {
     authKey: options.authKey ?? DEFAULT_AUTH_KEY,
     quotaRefreshMs: options.quotaRefreshMs ?? DEFAULT_QUOTA_REFRESH_MS,
     showQuota: options.showQuota !== false,
-    showHome: options.showHome !== false,
-    showSidebar: options.showSidebar !== false,
-    showQuotaDetails: options.showQuotaDetails !== false,
+    showIndicator: options.showIndicator !== false,
+    showBottomQuota: options.showBottomQuota !== false,
   }
 }
 
@@ -59,17 +52,17 @@ function rate(options = {}) {
 
   const benefitActive = dateKeyInTimeZone(hours.timeZone) <= currentSettings.offPeakBenefitUntil
   return benefitActive
-    ? { label: "Z.AI OFF-PEAK 1x until Sep 30", peak: false }
-    : { label: "Z.AI OFF-PEAK 2x", peak: false }
+    ? { label: "Z.AI 1x OFF-PEAK", detail: "until Sep 30", peak: false }
+    : { label: "Z.AI 2x OFF-PEAK", detail: "", peak: false }
 }
 
 const tui = async (api, options) => {
   const currentSettings = settings(options)
-  display.home = currentSettings.showHome
-  display.sidebar = currentSettings.showSidebar
-  display.quotaDetails = currentSettings.showQuotaDetails
-  refreshQuota(api, currentSettings)
-  const quotaTimer = setInterval(() => refreshQuota(api, currentSettings), currentSettings.quotaRefreshMs)
+  const [visible, setVisible] = createSignal(currentSettings.showIndicator)
+  const [quotaResult, setQuotaResult] = createSignal(null)
+
+  refreshQuota(api, currentSettings, setQuotaResult)
+  const quotaTimer = setInterval(() => refreshQuota(api, currentSettings, setQuotaResult), currentSettings.quotaRefreshMs)
   const timer = setInterval(() => api.renderer.requestRender(), 30_000)
   api.lifecycle.onDispose(() => {
     clearInterval(timer)
@@ -78,60 +71,16 @@ const tui = async (api, options) => {
 
   api.command?.register?.(() => [
     {
-      title: `Z.AI quota: ${indicatorLabel(options)}`,
-      value: "zai-rate-indicator.status",
+      title: `Z.AI quota: ${visible() ? "hide" : "show"} indicator`,
+      value: "zai-rate-indicator.toggle",
       category: "Status",
       hidden: false,
       onSelect: () => {
-        const current = rate(options)
-        api.ui.toast({
-          variant: current.peak ? "warning" : "success",
-          message: current.label,
-          duration: 3000,
-        })
-      },
-    },
-    {
-      title: `Z.AI quota: ${display.sidebar ? "hide" : "show"} sidebar`,
-      value: "zai-rate-indicator.toggle-sidebar",
-      category: "Status",
-      hidden: false,
-      onSelect: () => {
-        display.sidebar = !display.sidebar
+        setVisible(!visible())
         api.renderer.requestRender()
         api.ui.toast({
-          variant: "info",
-          message: `Z.AI quota sidebar ${display.sidebar ? "shown" : "hidden"}`,
-          duration: 2000,
-        })
-      },
-    },
-    {
-      title: `Z.AI quota: ${display.home ? "hide" : "show"} home banner`,
-      value: "zai-rate-indicator.toggle-home",
-      category: "Status",
-      hidden: false,
-      onSelect: () => {
-        display.home = !display.home
-        api.renderer.requestRender()
-        api.ui.toast({
-          variant: "info",
-          message: `Z.AI quota home banner ${display.home ? "shown" : "hidden"}`,
-          duration: 2000,
-        })
-      },
-    },
-    {
-      title: `Z.AI quota: ${display.quotaDetails ? "hide" : "show"} quota details`,
-      value: "zai-rate-indicator.toggle-quota-details",
-      category: "Status",
-      hidden: false,
-      onSelect: () => {
-        display.quotaDetails = !display.quotaDetails
-        api.renderer.requestRender()
-        api.ui.toast({
-          variant: "info",
-          message: `Z.AI quota details ${display.quotaDetails ? "shown" : "hidden"}`,
+          variant: visible() ? "success" : "info",
+          message: `Z.AI quota indicator ${visible() ? "shown" : "hidden"}`,
           duration: 2000,
         })
       },
@@ -142,23 +91,24 @@ const tui = async (api, options) => {
     order: 10,
     slots: {
       home_bottom() {
-        if (!display.home) return undefined
-        return indicatorBox(api, options)
+        return indicatorBox(api, options, "home", visible)
+      },
+      app_bottom() {
+        return bottomQuotaBox(api, currentSettings, visible, quotaResult)
       },
       sidebar_content() {
-        if (!display.sidebar) return undefined
-        return indicatorBox(api, options)
+        return indicatorBox(api, options, "sidebar", visible)
       },
     },
   })
   api.renderer.requestRender()
 }
 
-async function refreshQuota(api, options) {
+async function refreshQuota(api, options, setQuotaResult) {
   if (!options.showQuota || quota.loading) return
   quota.loading = true
   try {
-    quota.result = await fetchZaiQuota(options.authKey)
+    setQuotaResult(await fetchZaiQuota(options.authKey))
     quota.error = null
     quota.updatedAt = Date.now()
     api.renderer.requestRender()
@@ -222,34 +172,53 @@ function formatResetTime(epochMs) {
   }).format(new Date(value))
 }
 
-function indicatorLabel(options) {
+function indicatorLines(options, context) {
   const current = rate(options)
-  if (!display.quotaDetails || !quota.result) return current.label
-
-  const parts = [`${current.label}`, `plan ${quota.result.level}`]
-  if (quota.result.fiveHour) {
-    const reset = quota.result.fiveHour.reset ? ` reset ${quota.result.fiveHour.reset}` : ""
-    parts.push(`5h ${quota.result.fiveHour.usedPct}%${reset}`)
-  }
-  if (quota.result.week) {
-    parts.push(`week ${quota.result.week.usedPct}%`)
-  }
-  return parts.join(" · ")
+  return [context === "home" && current.detail ? `${current.label} ${current.detail}` : current.label]
 }
 
-function indicatorBox(api, options) {
+function bottomQuotaBox(api, options, visible, quotaResult) {
+  const box = createElement("box")
+  setProp(box, "width", "100%")
+  setProp(box, "paddingLeft", 1)
+  setProp(box, "paddingRight", 1)
+
+  const text = createElement("text")
+  setProp(text, "fg", api.theme.current.textMuted ?? api.theme.current.text)
+  insert(text, () => (visible() && options.showBottomQuota ? bottomQuotaLabel(quotaResult()) : " "))
+  insert(box, text)
+  return box
+}
+
+function bottomQuotaLabel(result) {
+  if (!result) return " "
+
+  const parts = []
+  if (result.fiveHour) {
+    const reset = result.fiveHour.reset ? ` reset ${result.fiveHour.reset}` : ""
+    parts.push(`5h ${result.fiveHour.usedPct}%${reset}`)
+  }
+  if (result.week) {
+    parts.push(`week ${result.week.usedPct}%`)
+  }
+  return parts.length > 0 ? `Z.AI quota: ${parts.join(" · ")}` : " "
+}
+
+function indicatorBox(api, options, context, visible) {
   const current = rate(options)
   const box = createElement("box")
   setProp(box, "width", "100%")
   setProp(box, "paddingLeft", 1)
   setProp(box, "paddingRight", 1)
-  setProp(box, "border", current.peak)
-  setProp(box, "borderColor", current.peak ? api.theme.current.error : api.theme.current.success)
+  if (current.peak) {
+    setProp(box, "border", true)
+    setProp(box, "borderColor", api.theme.current.error)
+  }
 
   const text = createElement("text")
   setProp(text, "fg", current.peak ? api.theme.current.error : api.theme.current.success)
   setProp(text, "bold", current.peak)
-  insert(text, indicatorLabel(options))
+  insert(text, () => (visible() ? indicatorLines(options, context).join("\n") : " "))
   insert(box, text)
   return box
 }

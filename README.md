@@ -21,18 +21,19 @@ Restart OpenCode/TUI after installing.
 
 Default peak window is `09:00-13:00 Europe/Moscow`. GLM-5.2 / GLM-5-Turbo are shown as `3x` during peak, `1x` off-peak until `2026-09-30`, and `2x` off-peak after that by default.
 
-If the Z.AI key is available in OpenCode auth as `zai-coding-plan`, the plugin also fetches real subscription quota usage from Z.AI:
+If the Z.AI key is available in OpenCode auth as `zai-coding-plan`, the plugin also fetches real subscription quota usage from Z.AI.
 
-During peak it shows a red boxed indicator:
+Home/sidebar indicator:
 
 ```text
-Z.AI PEAK 3x · plan PRO · 5h 42% reset 14:03 · week 18%
+Z.AI 3x PEAK
+5h 42% · week 18%
 ```
 
-Outside peak it shows:
+Bottom quota line:
 
 ```text
-Z.AI OFF-PEAK 1x until Sep 30 · plan PRO · 5h 42% reset 14:03 · week 18%
+Z.AI quota: 5h 42% reset 14:03 · week 18%
 ```
 
 If quota fetching fails, it silently falls back to the multiplier-only indicator.
@@ -75,24 +76,28 @@ Example global TUI config:
     "authKey": "zai-coding-plan",
     "quotaRefreshMs": 300000,
     "showQuota": true,
-    "showHome": true,
-    "showSidebar": true,
-    "showQuotaDetails": true
+    "showIndicator": true,
+    "showBottomQuota": true
   }
 ]
 ```
 
 ## Commands
 
-The command palette includes runtime toggles:
+The command palette includes one runtime toggle:
 
 ```text
-Z.AI quota: hide/show sidebar
-Z.AI quota: hide/show home banner
-Z.AI quota: hide/show quota details
+Z.AI quota: hide/show indicator
 ```
 
-These toggles apply to the current TUI process only. Use options in `tui.json` for persistent defaults.
+This toggle applies to the current TUI process only. Use config options for persistent defaults:
+
+```jsonc
+{
+  "showIndicator": true,
+  "showBottomQuota": true
+}
+```
 
 ## Development
 
