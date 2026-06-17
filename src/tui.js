@@ -1,13 +1,27 @@
 import { createElement, insert, setProp } from "@opentui/solid"
 
 const DEFAULT_PEAK_HOURS = { start: 9, end: 13, timeZone: "Europe/Moscow" }
+const DEFAULT_OFF_PEAK_BENEFIT_UNTIL = "2026-09-30"
 
-function peakHours(options = {}) {
-  return { ...DEFAULT_PEAK_HOURS, ...options.peakHours }
+function settings(options = {}) {
+  return {
+    peakHours: { ...DEFAULT_PEAK_HOURS, ...options.peakHours },
+    offPeakBenefitUntil: options.offPeakBenefitUntil ?? DEFAULT_OFF_PEAK_BENEFIT_UNTIL,
+  }
+}
+
+function dateKeyInTimeZone(timeZone) {
+  return new Intl.DateTimeFormat("en-CA", {
+    timeZone,
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  }).format(new Date())
 }
 
 function rate(options = {}) {
-  const hours = peakHours(options)
+  const currentSettings = settings(options)
+  const hours = currentSettings.peakHours
   const hour = Number(
     new Intl.DateTimeFormat("en-GB", {
       timeZone: hours.timeZone,
@@ -16,9 +30,14 @@ function rate(options = {}) {
     }).format(new Date()),
   )
 
-  return hour >= hours.start && hour < hours.end
-    ? { label: "!!! Z.AI QUOTA 3x PEAK !!!", peak: true }
-    : { label: "Z.AI quota: 1x", peak: false }
+  if (hour >= hours.start && hour < hours.end) {
+    return { label: "Z.AI PEAK 3x", peak: true }
+  }
+
+  const benefitActive = dateKeyInTimeZone(hours.timeZone) <= currentSettings.offPeakBenefitUntil
+  return benefitActive
+    ? { label: "Z.AI OFF-PEAK 1x until Sep 30", peak: false }
+    : { label: "Z.AI OFF-PEAK 2x", peak: false }
 }
 
 const tui = async (api, options) => {
