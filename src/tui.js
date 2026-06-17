@@ -22,7 +22,6 @@ function settings(options = {}) {
     quotaRefreshMs: options.quotaRefreshMs ?? DEFAULT_QUOTA_REFRESH_MS,
     showQuota: options.showQuota !== false,
     showIndicator: options.showIndicator !== false,
-    showBottomQuota: options.showBottomQuota !== false,
   }
 }
 
@@ -93,11 +92,8 @@ const tui = async (api, options) => {
       home_bottom() {
         return indicatorBox(api, options, "home", visible)
       },
-      app_bottom() {
-        return bottomQuotaBox(api, currentSettings, visible, quotaResult)
-      },
       sidebar_content() {
-        return indicatorBox(api, options, "sidebar", visible)
+        return indicatorBox(api, options, "sidebar", visible, quotaResult)
       },
     },
   })
@@ -172,39 +168,31 @@ function formatResetTime(epochMs) {
   }).format(new Date(value))
 }
 
-function indicatorLines(options, context) {
+function indicatorLines(options, context, quotaResult) {
   const current = rate(options)
-  return [context === "home" && current.detail ? `${current.label} ${current.detail}` : current.label]
+  const lines = [context === "home" && current.detail ? `${current.label} ${current.detail}` : current.label]
+  if (context === "sidebar") {
+    const quota = quotaLabel(quotaResult?.())
+    if (quota) lines.push(quota)
+  }
+  return lines
 }
 
-function bottomQuotaBox(api, options, visible, quotaResult) {
-  const box = createElement("box")
-  setProp(box, "width", "100%")
-  setProp(box, "paddingLeft", 1)
-  setProp(box, "paddingRight", 1)
-
-  const text = createElement("text")
-  setProp(text, "fg", api.theme.current.textMuted ?? api.theme.current.text)
-  insert(text, () => (visible() && options.showBottomQuota ? bottomQuotaLabel(quotaResult()) : " "))
-  insert(box, text)
-  return box
-}
-
-function bottomQuotaLabel(result) {
-  if (!result) return " "
+function quotaLabel(result) {
+  if (!result) return ""
 
   const parts = []
   if (result.fiveHour) {
-    const reset = result.fiveHour.reset ? ` reset ${result.fiveHour.reset}` : ""
+    const reset = result.fiveHour.reset ? ` ${result.fiveHour.reset}` : ""
     parts.push(`5h ${result.fiveHour.usedPct}%${reset}`)
   }
   if (result.week) {
-    parts.push(`week ${result.week.usedPct}%`)
+    parts.push(`W ${result.week.usedPct}%`)
   }
-  return parts.length > 0 ? `Z.AI quota: ${parts.join(" · ")}` : " "
+  return parts.join(" · ")
 }
 
-function indicatorBox(api, options, context, visible) {
+function indicatorBox(api, options, context, visible, quotaResult) {
   const current = rate(options)
   const box = createElement("box")
   setProp(box, "width", "100%")
@@ -218,7 +206,7 @@ function indicatorBox(api, options, context, visible) {
   const text = createElement("text")
   setProp(text, "fg", current.peak ? api.theme.current.error : api.theme.current.success)
   setProp(text, "bold", current.peak)
-  insert(text, () => (visible() ? indicatorLines(options, context).join("\n") : " "))
+  insert(text, () => (visible() ? indicatorLines(options, context, quotaResult).join("\n") : " "))
   insert(box, text)
   return box
 }

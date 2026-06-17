@@ -23,17 +23,17 @@ Default peak window is `09:00-13:00 Europe/Moscow`. GLM-5.2 / GLM-5-Turbo are sh
 
 If the Z.AI key is available in OpenCode auth as `zai-coding-plan`, the plugin also fetches real subscription quota usage from Z.AI.
 
-Home/sidebar indicator:
+Home indicator:
 
 ```text
 Z.AI 3x PEAK
-5h 42% · week 18%
 ```
 
-Bottom quota line:
+Sidebar indicator:
 
 ```text
-Z.AI quota: 5h 42% reset 14:03 · week 18%
+Z.AI 3x PEAK
+5h 42% 14:03 · W 18%
 ```
 
 If quota fetching fails, it silently falls back to the multiplier-only indicator.
@@ -76,8 +76,7 @@ Example global TUI config:
     "authKey": "zai-coding-plan",
     "quotaRefreshMs": 300000,
     "showQuota": true,
-    "showIndicator": true,
-    "showBottomQuota": true
+    "showIndicator": true
   }
 ]
 ```
@@ -94,8 +93,7 @@ This toggle applies to the current TUI process only. Use config options for pers
 
 ```jsonc
 {
-  "showIndicator": true,
-  "showBottomQuota": true
+  "showIndicator": true
 }
 ```
 
