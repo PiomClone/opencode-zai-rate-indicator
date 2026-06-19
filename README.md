@@ -1,8 +1,14 @@
 # opencode-zai-rate-indicator
 
-OpenCode TUI plugin that shows current Z.AI / GLM quota multiplier and subscription quota status.
+OpenCode TUI plugin that shows quota status for the provider used by the active session.
 
-It is useful when you use Z.AI Coding Plan models and want a visible warning before spending requests during the peak pricing window.
+Supported providers:
+
+- Z.AI Coding Plan: peak/off-peak multiplier and 5-hour/weekly quota
+- Kimi for Coding: 5-hour/weekly quota
+- MiniMax Coding Plan: 5-hour/weekly quota
+
+The active provider is detected from the current session model. Switching models refreshes the displayed quota automatically.
 
 Companion server guard: [opencode-zai-peak-guard](https://github.com/PiomClone/opencode-zai-peak-guard).
 
@@ -19,17 +25,11 @@ Restart OpenCode/TUI after installing.
 
 ## What It Shows
 
-Default peak window is `09:00-13:00 Europe/Moscow`. GLM-5.2 / GLM-5-Turbo are shown as `3x` during peak, `1x` off-peak until `2026-09-30`, and `2x` off-peak after that by default.
+Default peak window is `09:00-13:00 Europe/Moscow`. GLM-5.2 / GLM-5-Turbo are shown as `3x` during peak, `1x` off-peak until `2026-09-30`, and `2x` off-peak after that by default. The indicator is shown only in the active session sidebar.
 
-If the Z.AI key is available in OpenCode auth as `zai-coding-plan`, the plugin also fetches real subscription quota usage from Z.AI.
+The plugin reads provider credentials from OpenCode auth and fetches the corresponding subscription quota.
 
-Home indicator:
-
-```text
-Z.AI 3x PEAK
-```
-
-Sidebar indicator:
+Z.AI sidebar indicator:
 
 ```text
 Z.AI 3x PEAK
@@ -37,6 +37,8 @@ Z.AI 3x PEAK
 ```
 
 If quota fetching fails, it silently falls back to the multiplier-only indicator.
+
+Kimi and MiniMax show the provider name and available quota windows without a pricing multiplier. Unsupported providers show `No quota provider`.
 
 ## Install
 
@@ -73,7 +75,11 @@ Example global TUI config:
   {
     "peakHours": { "start": 9, "end": 13, "timeZone": "Europe/Moscow" },
     "offPeakBenefitUntil": "2026-09-30",
-    "authKey": "zai-coding-plan",
+    "authKeys": {
+      "zai": "zai-coding-plan",
+      "kimi": "kimi-for-coding",
+      "minimax": "minimax-coding-plan"
+    },
     "quotaRefreshMs": 300000,
     "showQuota": true,
     "showIndicator": true
@@ -86,7 +92,7 @@ Example global TUI config:
 The command palette includes one runtime toggle:
 
 ```text
-Z.AI quota: hide/show indicator
+Quota indicator: hide/show
 ```
 
 This toggle applies to the current TUI process only. Use config options for persistent defaults:
@@ -105,4 +111,4 @@ npm run check
 
 ## Keywords
 
-OpenCode plugin, OpenCode TUI plugin, Z.AI, Z AI, GLM-5, GLM-5.2, Z.AI Coding Plan, peak pricing, off-peak quota, quota indicator.
+OpenCode plugin, OpenCode TUI plugin, Z.AI, Kimi, MiniMax, GLM-5, Z.AI Coding Plan, peak pricing, quota indicator.
